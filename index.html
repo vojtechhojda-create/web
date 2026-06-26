@@ -9,8 +9,11 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bitcount+Grid+Double:wght@300&display=swap" rel="stylesheet">
 
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
     <style>
-        /* CSS Proměnné pro režimy */
         :root {
             --bg-color: #f3f4f6;
             --text-base-color: #111111;
@@ -60,7 +63,6 @@
             transition: background-color 0.3s ease;
         }
 
-        /* Dynamický kruh na pozadí */
         .mouse-glow {
             position: absolute;
             top: 0;
@@ -75,7 +77,6 @@
             mask-image: radial-gradient(circle 260px at var(--x, -1000px) var(--y, -1000px), rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
         }
 
-        /* Sekce s plynulým prolínáním */
         .page-section {
             position: absolute;
             top: 0;
@@ -100,7 +101,6 @@
             transform: translateY(0);
         }
 
-        /* MAIN SEKCE + SKILLS */
         .main-container {
             display: flex;
             flex-direction: column;
@@ -141,7 +141,6 @@
             user-select: none;
         }
 
-        /* Výběr štítků ve formuláři */
         .tag-select-container {
             display: flex;
             gap: 8px;
@@ -167,7 +166,6 @@
             border-color: var(--text-base-color);
         }
 
-        /* Zobrazení vybraných štítků na kartě projektu */
         .project-tags {
             display: flex;
             gap: 6px;
@@ -183,7 +181,6 @@
             opacity: 0.7;
         }
 
-        /* CONTACT SEKCE */
         .contact-container {
             display: flex;
             flex-direction: column;
@@ -193,7 +190,6 @@
             max-width: 600px;
         }
 
-        /* PROJECTS SEKCE */
         .projects-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -205,7 +201,6 @@
             padding: 10px;
         }
 
-        /* Vylepšený Liquid Glass element (karty a odkazy) */
         .glass-element {
             background: var(--card-bg);
             border: 1px solid var(--glass-border);
@@ -269,7 +264,6 @@
             overflow: hidden;
         }
 
-        /* Tlačítka pro správu */
         .admin-controls {
             position: absolute;
             bottom: 40px;
@@ -303,7 +297,6 @@
             z-index: 5;
         }
 
-        /* Spodní panel */
         .glass-nav {
             position: absolute;
             bottom: 40px;
@@ -349,7 +342,6 @@
             font-weight: bold;
         }
 
-        /* MODÁLNÍ OKNA */
         .modal {
             display: none;
             position: fixed;
@@ -426,7 +418,6 @@
             font-size: 1.1rem;
         }
 
-        /* Responzivita */
         @media (max-width: 1400px) { .jmeno { font-size: 10rem; } }
         @media (max-width: 900px) { 
             .jmeno { font-size: 6rem; }
@@ -469,7 +460,6 @@
 
     <div class="admin-controls" id="adminControls">
         <button class="admin-btn glass-element" onclick="openAddModal()">Přidat</button>
-        <button class="admin-btn glass-element" id="manageBtn" onclick="toggleManageMode()">Spravovat</button>
     </div>
 
     <section id="contact" class="page-section">
@@ -496,6 +486,7 @@
         <div class="nav-item active" onclick="switchSection('main')">Main</div>
         <div class="nav-item" onclick="switchSection('projects')">Projects</div>
         <div class="nav-item" onclick="switchSection('contact')">Contact</div>
+        <div class="nav-item" id="adminLoginBtn" onclick="handleAuth()" style="border-left: 1px solid var(--glass-border); padding-left: 15px;">Admin Login</div>
     </nav>
 
     <div class="modal" id="addModal">
@@ -516,7 +507,7 @@
             </div>
 
             <div class="form-group">
-                <label>Použité technologie / Jazyky (Kliknutím vyber)</label>
+                <label>Použité technologie (Kliknutím vyber)</label>
                 <div class="tag-select-container" id="tagSelectContainer">
                     <div class="tag-option" onclick="toggleTagSelect(this)">HTML</div>
                     <div class="tag-option" onclick="toggleTagSelect(this)">CSS</div>
@@ -554,7 +545,32 @@
     </div>
 
     <script>
-        // Efekt myši
+        // --- KONFIGURACE FIREBASE Z TVÉHO PROJEKTU ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyD76e6Sms8bPUINe7za9TDExKJtOkTWxl8",
+            authDomain: "portfolio-b90fb.firebaseapp.com",
+            projectId: "portfolio-b90fb",
+            storageBucket: "portfolio-b90fb.firebasestorage.app",
+            messagingSenderId: "334967962802",
+            appId: "1:334967962802:web:99b91e1fcc0e3fa2e79dab"
+        };
+
+        // Inicializace Firebase
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // Povolené admin e-maily
+        const ALLOWED_ADMINS = [
+            "vojtechhojda@gmail.com",
+            "vojtahojda@gmail.com",
+            "vojtahojda1@gmail.com"
+        ];
+
+        let projects = [];
+        let currentUser = null;
+
+        // Efekt myši na pozadí
         const mouseGlow = document.querySelector('.mouse-glow');
         let targetX = -1000, targetY = -1000;
         let currentX = -1000, currentY = -1000;
@@ -573,7 +589,6 @@
         }
         animate();
 
-        // Liquid Glass odlesky
         function setupGlassGlow() {
             const handleMouseMove = (e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
@@ -589,7 +604,6 @@
             });
         }
 
-        // Tmavý/světlý režim
         function applySystemTheme() {
             const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
             document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
@@ -597,61 +611,84 @@
         applySystemTheme();
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applySystemTheme);
 
-        // Sekce
         function switchSection(sectionId) {
             document.querySelectorAll('.page-section').forEach(section => section.classList.remove('active'));
             document.getElementById(sectionId).classList.add('active');
 
             document.querySelectorAll('.nav-item').forEach(item => {
                 item.classList.remove('active');
-                if(item.innerText.toLowerCase() === sectionId) item.classList.add('active');
+                if(item.id !== 'adminLoginBtn' && item.innerText.toLowerCase() === sectionId) item.classList.add('active');
             });
 
             const adminControls = document.getElementById('adminControls');
-            if (sectionId === 'projects') {
+            if (sectionId === 'projects' && currentUser && ALLOWED_ADMINS.includes(currentUser.email)) {
                 adminControls.style.display = 'flex';
             } else {
                 adminControls.style.display = 'none';
-                disableManageMode();
             }
         }
 
-        // Přepínání vybraných štítků ve formuláři
         function toggleTagSelect(element) {
             element.classList.toggle('selected');
         }
 
-        // --- SPRÁVA PROJEKTŮ ---
-        const TAJNE_HESLO = "Tygr6590.";
-        let projects = [];
-        let manageMode = false;
-
-        function loadProjects() {
-            const saved = localStorage.getItem('data_projekty');
-            if (saved) {
-                projects = JSON.parse(saved);
+        // --- PŘIHLAŠOVÁNÍ A AUTH LOGIKA ---
+        function handleAuth() {
+            if (!currentUser) {
+                const provider = new firebase.auth.GoogleAuthProvider();
+                auth.signInWithPopup(provider).catch(error => alert("Chyba přihlášení: " + error.message));
             } else {
-                projects = [{
-                    id: 1,
-                    title: "Ukázkový projekt",
-                    desc: "Klikni na mě a uvidíš detail se štítky a nahraným obrázkem.",
-                    img: "",
-                    tags: ["HTML", "CSS", "JavaScript"],
-                    link: ""
-                }];
+                auth.signOut();
             }
-            renderGrid();
+        }
+
+        auth.onAuthStateChanged(user => {
+            const loginBtn = document.getElementById('adminLoginBtn');
+            const adminControls = document.getElementById('adminControls');
+            
+            if (user && ALLOWED_ADMINS.includes(user.email)) {
+                currentUser = user;
+                if(loginBtn) loginBtn.innerText = "Logout Admin";
+                const activeSection = document.querySelector('.page-section.active');
+                if (activeSection && activeSection.id === 'projects') {
+                    adminControls.style.display = 'flex';
+                }
+                renderGrid(); // Překreslíme, aby naskočila tlačítka pro smazání
+            } else {
+                currentUser = null;
+                if(loginBtn) loginBtn.innerText = "Admin Login";
+                if(adminControls) adminControls.style.display = 'none';
+                if (user && !ALLOWED_ADMINS.includes(user.email)) {
+                    alert("Tento účet nemá admin práva.");
+                    auth.signOut();
+                }
+                renderGrid();
+            }
+        });
+
+        // --- NAČÍTÁNÍ A UKLÁDÁNÍ DO REALNÉ DATABÁZE ---
+        function loadProjects() {
+            db.collection("projects").orderBy("id", "desc").onSnapshot(snapshot => {
+                projects = [];
+                snapshot.forEach(doc => {
+                    let data = doc.data();
+                    data.docId = doc.id;
+                    projects.push(data);
+                });
+                renderGrid();
+            });
         }
 
         function renderGrid() {
             const grid = document.getElementById('projectsGrid');
+            if(!grid) return;
             grid.innerHTML = '';
+            
             projects.forEach(p => {
                 const card = document.createElement('div');
                 card.className = 'project-card glass-element';
-                card.setAttribute('onclick', `openDetailModal(${p.id})`);
+                card.setAttribute('onclick', `openDetailModal('${p.id}')`);
                 
-                // Vygenerování tagů pro náhled na kartě
                 let tagsHtml = '';
                 if(p.tags && p.tags.length > 0) {
                     tagsHtml = `<div class="project-tags">`;
@@ -659,8 +696,11 @@
                     tagsHtml += `</div>`;
                 }
 
+                const isAdmin = currentUser && ALLOWED_ADMINS.includes(currentUser.email);
+                const deleteBtnHtml = isAdmin ? `<button class="delete-overlay-btn" style="display: block;" onclick="deleteProject(event, '${p.docId}')">Smazat</button>` : '';
+
                 card.innerHTML = `
-                    <button class="delete-overlay-btn" onclick="deleteProject(event, ${p.id})">Smazat</button>
+                    ${deleteBtnHtml}
                     <h3>${p.title}</h3>
                     <p>${p.desc}</p>
                     ${tagsHtml}
@@ -671,13 +711,11 @@
         }
 
         function openAddModal() {
-            const heslo = prompt("Zadej administrátorské heslo:");
-            if (heslo === TAJNE_HESLO) {
-                // Resetování vybraných štítků před otevřením
+            if (currentUser && ALLOWED_ADMINS.includes(currentUser.email)) {
                 document.querySelectorAll('.tag-option').forEach(opt => opt.classList.remove('selected'));
                 document.getElementById('addModal').style.display = 'flex';
-            } else if (heslo !== null) {
-                alert("Nesprávné heslo!");
+            } else {
+                alert("Nejsi přihlášen jako admin!");
             }
         }
 
@@ -685,7 +723,6 @@
             document.getElementById(modalId).style.display = 'none';
         }
 
-        // Zpracování dat a uložení nového projektu
         function submitProject() {
             const title = document.getElementById('projTitle').value;
             const desc = document.getElementById('projDesc').value;
@@ -697,49 +734,37 @@
                 return;
             }
 
-            // Sesbírání vybraných jazyků ze štítků
             const selectedTags = [];
-            document.querySelectorAll('.tag-option.selected').forEach(opt => {
-                selectedTags.push(opt.innerText);
-            });
+            document.querySelectorAll('.tag-option.selected').forEach(opt => selectedTags.push(opt.innerText));
 
-            const save = (base64Img) => {
-                const newProj = {
-                    id: Date.now(),
+            const saveToFirestore = (base64Img) => {
+                db.collection("projects").add({
+                    id: String(Date.now()),
                     title: title,
                     desc: desc,
                     img: base64Img || "",
                     tags: selectedTags,
                     link: link
-                };
-
-                projects.push(newProj);
-                localStorage.setItem('data_projekty', JSON.stringify(projects));
-                renderGrid();
-                closeModal('addModal');
-
-                // Vyčištění formuláře
-                document.getElementById('projTitle').value = '';
-                document.getElementById('projDesc').value = '';
-                document.getElementById('projLink').value = '';
-                fileInput.value = '';
+                }).then(() => {
+                    closeModal('addModal');
+                    document.getElementById('projTitle').value = '';
+                    document.getElementById('projDesc').value = '';
+                    document.getElementById('projLink').value = '';
+                    fileInput.value = '';
+                }).catch(err => alert("Chyba: " + err.message));
             };
 
-            // Pokud uživatel nahrál soubor obrázku, převedeme ho na Base64 text
             if (fileInput.files && fileInput.files[0]) {
                 const reader = new FileReader();
-                reader.onload = function(e) {
-                    save(e.target.result);
-                };
+                reader.onload = function(e) { saveToFirestore(e.target.result); };
                 reader.readAsDataURL(fileInput.files[0]);
             } else {
-                save(""); // Bez obrázku
+                saveToFirestore("");
             }
         }
 
         function openDetailModal(id) {
-            if (manageMode) return;
-            const p = projects.find(item => item.id === id);
+            const p = projects.find(item => item.id === String(id));
             if (!p) return;
 
             document.getElementById('detailTitle').innerText = p.title;
@@ -748,7 +773,6 @@
             const imgContainer = document.getElementById('detailImgContainer');
             imgContainer.innerHTML = p.img ? `<img src="${p.img}" class="project-detail-img" alt="Projekt">` : '';
 
-            // Zobrazení štítků v detailu okna
             const tagsContainer = document.getElementById('detailTagsContainer');
             tagsContainer.innerHTML = '';
             if(p.tags && p.tags.length > 0) {
@@ -763,43 +787,15 @@
             document.getElementById('detailModal').style.display = 'flex';
         }
 
-        function toggleManageMode() {
-            if (!manageMode) {
-                const heslo = prompt("Zadej administrátorské heslo pro správu:");
-                if (heslo === TAJNE_HESLO) {
-                    manageMode = true;
-                    document.getElementById('manageBtn').style.background = '#ff4d4d';
-                    document.getElementById('manageBtn').style.color = '#fff';
-                    document.querySelectorAll('.delete-overlay-btn').forEach(btn => btn.style.display = 'block');
-                } else if (heslo !== null) {
-                    alert("Nesprávné heslo!");
-                }
-            } else {
-                disableManageMode();
-            }
-        }
-
-        function disableManageMode() {
-            manageMode = false;
-            const btn = document.getElementById('manageBtn');
-            if(btn) {
-                btn.style.background = 'var(--glass-bg)';
-                btn.style.color = 'var(--text-base-color)';
-            }
-            document.querySelectorAll('.delete-overlay-btn').forEach(btn => btn.style.display = 'none');
-        }
-
-        function deleteProject(event, id) {
+        function deleteProject(event, docId) {
             event.stopPropagation();
-            if(confirm("Opravdu chceš tento projekt odstranit?")) {
-                projects = projects.filter(p => p.id !== id);
-                localStorage.setItem('data_projekty', JSON.stringify(projects));
-                renderGrid();
-                disableManageMode();
+            if(confirm("Opravdu chceš tento projekt smazat pro všechny?")) {
+                db.collection("projects").doc(docId).delete()
+                    .catch(err => alert("Chyba při mazání: " + err.message));
             }
         }
 
-        // Inicializace
+        // Spuštění
         loadProjects();
         setupGlassGlow();
     </script>
