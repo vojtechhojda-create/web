@@ -141,6 +141,27 @@
             user-select: none;
         }
 
+        /* STYLY PRO SEKCI O MNĚ */
+        .about-card {
+            max-width: 650px;
+            width: 100%;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .about-card h2 {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            color: var(--text-base-color);
+        }
+
+        .about-card p {
+            font-size: 1.4rem;
+            line-height: 1.6;
+            color: var(--text-base-color);
+            opacity: 0.9;
+        }
+
         .tag-select-container {
             display: flex;
             gap: 8px;
@@ -342,7 +363,7 @@
             font-weight: bold;
         }
 
-        /* SKRYTÉ A MATNÉ HLAVNÍ TLAČÍTKO ADMIN LOGIN VRAVO DOLE */
+        /* SKRYTÉ A MATNÉ HLAVNÍ TLAČÍTKO ADMIN LOGIN VPRAVO DOLE */
         .hidden-admin-trigger {
             position: absolute;
             bottom: 40px;
@@ -354,15 +375,14 @@
             color: var(--text-base-color);
             cursor: pointer;
             user-select: none;
-            opacity: 0; /* Úplně skryté v základu */
+            opacity: 0;
             transition: opacity 0.3s ease, background-color 0.2s ease;
             background: transparent;
             border: 1px solid transparent;
         }
 
-        /* ROZSVÍCENÍ (GLOW) PŘI NAJETÍ MYŠI */
         .hidden-admin-trigger:hover {
-            opacity: 1; /* Ukáže se při zamíření */
+            opacity: 1;
             background: var(--glass-bg);
             border-color: var(--glass-border);
             backdrop-filter: blur(16px);
@@ -487,6 +507,13 @@
         </div>
     </section>
 
+    <section id="about" class="page-section">
+        <div class="about-card glass-element">
+            <h2>O mně</h2>
+            <p>Ahoj, jmenuji se Vojtěch Hojda. Jsem začínající vývojář a editor z České republiky.</p>
+        </div>
+    </section>
+
     <section id="projects" class="page-section">
         <div class="projects-grid" id="projectsGrid">
             </div>
@@ -518,6 +545,7 @@
 
     <nav class="glass-nav">
         <div class="nav-item active" onclick="switchSection('main')">Main</div>
+        <div class="nav-item" onclick="switchSection('about')">About</div>
         <div class="nav-item" onclick="switchSection('projects')">Projects</div>
         <div class="nav-item" onclick="switchSection('contact')">Contact</div>
     </nav>
@@ -579,7 +607,7 @@
         </div>
     </div>
 
-    <script>
+    <script {nonce}>
         // --- KONFIGURACE FIREBASE Z TVÉHO PROJEKTU ---
         const firebaseConfig = {
             apiKey: "AIzaSyD76e6Sms8bPUINe7za9TDExKJtOkTWxl8",
