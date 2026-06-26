@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vojtěch Hojda</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bitcount+Grid+Double:wght@300&display=swap" rel="stylesheet">
+
+    <style>
+        /* CSS Proměnné pro režimy */
+        :root {
+            --bg-color: #f3f4f6;
+            --text-base-color: #111111;
+            --dot-base-color: #d1d5db;
+            --dot-glow-color: rgba(0, 0, 0, 0.4);
+            --glass-bg: rgba(255, 255, 255, 0.4);
+            --glass-border: rgba(255, 255, 255, 0.4);
+            --glass-shadow: rgba(0, 0, 0, 0.05);
+            --nav-hover: rgba(0, 0, 0, 0.05);
+            --card-bg: rgba(255, 255, 255, 0.6);
+            --modal-bg: rgba(255, 255, 255, 0.95);
+            --input-bg: #ffffff;
+            --glow-color: rgba(0, 0, 0, 0.08);
+            --skill-bg: rgba(0, 0, 0, 0.05);
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #111111;
+            --text-base-color: #f3f4f6;
+            --dot-base-color: #333333;
+            --dot-glow-color: rgba(255, 255, 255, 0.4);
+            --glass-bg: rgba(20, 20, 20, 0.4);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-shadow: rgba(0, 0, 0, 0.4);
+            --nav-hover: rgba(255, 255, 255, 0.05);
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --modal-bg: rgba(20, 20, 20, 0.95);
+            --input-bg: #222222;
+            --glow-color: rgba(255, 255, 255, 0.15);
+            --skill-bg: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            background-image: radial-gradient(var(--dot-base-color) 1px, transparent 1px);
+            background-size: 16px 16px;
+            font-family: "Bitcount Grid Double", system-ui;
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+            transition: background-color 0.3s ease;
+        }
+
+        /* Dynamický kruh na pozadí */
+        .mouse-glow {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 1;
+            background-image: radial-gradient(var(--dot-glow-color) 1px, transparent 1px);
+            background-size: 16px 16px;
+            -webkit-mask-image: radial-gradient(circle 260px at var(--x, -1000px) var(--y, -1000px), rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
+            mask-image: radial-gradient(circle 260px at var(--x, -1000px) var(--y, -1000px), rgba(0,0,0,1) 0%, rgba(0,0,0,0) 100%);
+        }
+
+        /* Sekce s plynulým prolínáním */
+        .page-section {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: calc(100vh - 120px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            padding: 40px 20px;
+            z-index: 2;
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(10px);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+
+        .page-section.active {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+
+        /* MAIN SEKCE + SKILLS */
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .jmeno {
+            font-size: 15rem;
+            font-weight: 300;
+            font-style: normal;
+            font-variation-settings: "slnt" 0, "CRSV" 0.5, "ELSH" 0, "ELXP" 0;
+            color: var(--text-base-color);
+            text-align: center;
+            line-height: 1;
+            cursor: default;
+            user-select: none;
+            transition: color 0.3s ease;
+        }
+
+        /* Nový styl štítků podle zadání */
+        .skills-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: -10px;
+        }
+
+        .skill-badge {
+            background: var(--skill-bg);
+            color: var(--text-base-color);
+            padding: 6px 14px;
+            border: 1px dashed var(--text-base-color);
+            font-size: 1.1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: default;
+            user-select: none;
+        }
+
+        /* CONTACT SEKCE */
+        .contact-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        /* PROJECTS SEKCE */
+        .projects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            width: 100%;
+            max-width: 1000px;
+            max-height: 75vh;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        /* Vylepšený Liquid Glass element (karty a odkazy) */
+        .glass-element {
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 15px var(--glass-shadow);
+            transition: transform 0.2s ease, background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .glass-element:hover {
+            transform: translateY(-3px);
+        }
+
+        /* Světelný odlesk reagující na myš */
+        .glass-element::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle 120px at var(--mouse-x, -1000px) var(--mouse-y, -1000px), var(--glow-color), transparent 100%);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        /* Úprava odkazu v kontaktu pro zachování struktury */
+        .contact-link {
+            font-size: 2.5rem;
+            color: var(--text-base-color);
+            text-decoration: none;
+            padding: 12px 24px;
+            text-align: center;
+            width: 100%;
+            display: block;
+        }
+
+        .project-card {
+            padding: 24px;
+            cursor: pointer;
+        }
+
+        .project-card h3 {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            color: var(--text-base-color);
+            position: relative;
+            z-index: 2;
+        }
+
+        .project-card p {
+            font-size: 1.1rem;
+            color: var(--text-base-color);
+            opacity: 0.8;
+            position: relative;
+            z-index: 2;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        /* Tlačítka pro správu dole vlevo */
+        .admin-controls {
+            position: absolute;
+            bottom: 40px;
+            left: 40px;
+            z-index: 15;
+            display: none;
+            gap: 10px;
+        }
+
+        .admin-btn {
+            padding: 12px 20px;
+            font-family: inherit;
+            font-size: 1rem;
+            border-radius: 14px;
+            cursor: pointer;
+            color: var(--text-base-color);
+        }
+
+        .delete-overlay-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #ff4d4d;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 4px 8px;
+            cursor: pointer;
+            font-family: inherit;
+            display: none;
+            z-index: 5;
+        }
+
+        /* Spodní liquid glass navigační panel */
+        .glass-nav {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            display: flex;
+            gap: 4px;
+            padding: 6px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: 0 8px 32px 0 var(--glass-shadow);
+        }
+
+        .nav-item {
+            font-size: 1.1rem;
+            color: var(--text-base-color);
+            text-decoration: none;
+            padding: 10px 20px;
+            border-radius: 16px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: background-color 0.2s ease;
+        }
+
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle 60px at var(--mouse-x, -1000px) var(--mouse-y, -1000px), var(--glow-color), transparent 100%);
+            pointer-events: none;
+        }
+
+        .nav-item.active {
+            background-color: var(--nav-hover);
+            font-weight: bold;
+        }
+
+        /* MODÁLNÍ OKNA */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 100;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            background: var(--modal-bg);
+            border: 1px solid var(--glass-border);
+            padding: 30px;
+            border-radius: 24px;
+            width: 90%;
+            max-width: 550px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            color: var(--text-base-color);
+        }
+
+        .modal-content h2, .modal-content h3 {
+            margin-bottom: 20px;
+            font-size: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 6px;
+            font-size: 1rem;
+        }
+
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+            background: var(--input-bg);
+            color: var(--text-base-color);
+            font-family: inherit;
+            font-size: 1rem;
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .project-detail-img {
+            width: 100%;
+            max-height: 250px;
+            object-fit: cover;
+            border-radius: 14px;
+            margin-bottom: 15px;
+        }
+
+        .project-detail-link {
+            display: inline-block;
+            margin-top: 15px;
+            color: #4d4dff;
+            text-decoration: underline;
+            font-size: 1.1rem;
+        }
+
+        /* Responzivita */
+        @media (max-width: 1400px) { .jmeno { font-size: 10rem; } }
+        @media (max-width: 900px) { 
+            .jmeno { font-size: 6rem; }
+            .contact-link { font-size: 1.8rem; }
+        }
+        @media (max-width: 768px) {
+            .admin-controls {
+                position: absolute;
+                bottom: 110px;
+                left: 50%;
+                transform: translateX(-50%);
+            }
+        }
+        @media (max-width: 600px) { 
+            .jmeno { font-size: 3.5rem; }
+            .contact-link { font-size: 1.2rem; padding: 10px 16px; }
+            .glass-nav { width: 95%; justify-content: center; bottom: 20px; }
+            .nav-item { padding: 10px 12px; font-size: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="mouse-glow"></div>
+
+    <section id="main" class="page-section active">
+        <div class="main-container">
+            <h1 class="jmeno">Vojtěch Hojda</h1>
+            <div class="skills-row">
+                <div class="skill-badge">Starter Dev</div>
+                <div class="skill-badge">From Czechia</div>
+            </div>
+        </div>
+    </section>
+
+    <section id="projects" class="page-section">
+        <div class="projects-grid" id="projectsGrid">
+            </div>
+    </section>
+
+    <div class="admin-controls" id="adminControls">
+        <button class="admin-btn glass-element" onclick="openAddModal()">Přidat</button>
+        <button class="admin-btn glass-element" id="manageBtn" onclick="toggleManageMode()">Spravovat</button>
+    </div>
+
+    <section id="contact" class="page-section">
+        <div class="contact-container">
+            <div class="glass-element" style="width: 100%;">
+                <a href="https://wa.me/420703150071" target="_blank" class="contact-link">
+                    WhatsApp: +420 703 150 071
+                </a>
+            </div>
+            <div class="glass-element" style="width: 100%;">
+                <a href="https://instagram.com/vojtechhojda" target="_blank" class="contact-link">
+                    Instagram: @vojtechhojda
+                </a>
+            </div>
+            <div class="glass-element" style="width: 100%;">
+                <a href="https://github.com/vojtechhojda-create" target="_blank" class="contact-link">
+                    GitHub: vojtechhojda-create
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <nav class="glass-nav">
+        <div class="nav-item active" onclick="switchSection('main')">Main</div>
+        <div class="nav-item" onclick="switchSection('projects')">Projects</div>
+        <div class="nav-item" onclick="switchSection('contact')">Contact</div>
+    </nav>
+
+    <div class="modal" id="addModal">
+        <div class="modal-content">
+            <h2>Nový projekt</h2>
+            <div class="form-group">
+                <label>Název projektu</label>
+                <input type="text" id="projTitle">
+            </div>
+            <div class="form-group">
+                <label>Popis (text)</label>
+                <textarea id="projDesc" rows="4"></textarea>
+            </div>
+            <div class="form-group">
+                <label>URL adresa obrázku</label>
+                <input type="text" id="projImg" placeholder="https://odkaz-na-obrazek.cz/foto.jpg">
+            </div>
+            <div class="form-group">
+                <label>Odkaz na projekt (link)</label>
+                <input type="text" id="projLink" placeholder="https://mujprojekt.cz">
+            </div>
+            <div class="modal-actions">
+                <button class="admin-btn glass-element" onclick="closeModal('addModal')">Zrušit</button>
+                <button class="admin-btn glass-element" style="background: var(--text-base-color); color: var(--bg-color);" onclick="submitProject()">Uložit</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="detailModal">
+        <div class="modal-content">
+            <h2 id="detailTitle">Název</h2>
+            <div id="detailImgContainer"></div>
+            <p id="detailDesc">Popis...</p>
+            <div id="detailLinkContainer"></div>
+            <div class="modal-actions">
+                <button class="admin-btn glass-element" onclick="closeModal('detailModal')">Zavřít</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Efekt myši pro tečky na pozadí
+        const mouseGlow = document.querySelector('.mouse-glow');
+        let targetX = -1000, targetY = -1000;
+        let currentX = -1000, currentY = -1000;
+
+        window.addEventListener('mousemove', (e) => {
+            targetX = e.clientX;
+            targetY = e.clientY;
+        });
+
+        function animate() {
+            currentX += (targetX - currentX) * 0.18;
+            currentY += (targetY - currentY) * 0.18;
+            mouseGlow.style.setProperty('--x', `${currentX}px`);
+            mouseGlow.style.setProperty('--y', `${currentY}px`);
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        // Výpočet pozice myši uvnitř Liquid Glass prvků pro efekt odlesku
+        function setupGlassGlow() {
+            const handleMouseMove = (e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                e.currentTarget.style.setProperty('--mouse-x', `${x}px`);
+                e.currentTarget.style.setProperty('--mouse-y', `${y}px`);
+            };
+
+            document.querySelectorAll('.glass-element, .nav-item').forEach(element => {
+                element.removeEventListener('mousemove', handleMouseMove);
+                element.addEventListener('mousemove', handleMouseMove);
+            });
+        }
+
+        // Detekce a nastavení tmavého/světlého režimu
+        function applySystemTheme() {
+            const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+        }
+        applySystemTheme();
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applySystemTheme);
+
+        // Přepínání sekcí s plynulou animací
+        function switchSection(sectionId) {
+            document.querySelectorAll('.page-section').forEach(section => section.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+                if(item.innerText.toLowerCase() === sectionId) item.classList.add('active');
+            });
+
+            const adminControls = document.getElementById('adminControls');
+            if (sectionId === 'projects') {
+                adminControls.style.display = 'flex';
+            } else {
+                adminControls.style.display = 'none';
+                disableManageMode();
+            }
+        }
+
+        // --- SPRÁVA PROJEKTŮ ---
+        const TAJNE_HESLO = "Tygr6590.";
+        let projects = [];
+        let manageMode = false;
+
+        function loadProjects() {
+            const saved = localStorage.getItem('data_projekty');
+            if (saved) {
+                projects = JSON.parse(saved);
+            } else {
+                projects = [{
+                    id: 1,
+                    title: "Ukázkový projekt",
+                    desc: "Klikni na mě a uvidíš detail s obrázkem a odkazem. Pokud chceš přidávat vlastní věci, použij tlačítka v levém dolním rohu.",
+                    img: "",
+                    link: ""
+                }];
+            }
+            renderGrid();
+        }
+
+        function renderGrid() {
+            const grid = document.getElementById('projectsGrid');
+            grid.innerHTML = '';
+            projects.forEach(p => {
+                const card = document.createElement('div');
+                card.className = 'project-card glass-element';
+                card.setAttribute('onclick', `openDetailModal(${p.id})`);
+                card.innerHTML = `
+                    <button class="delete-overlay-btn" onclick="deleteProject(event, ${p.id})">Smazat</button>
+                    <h3>${p.title}</h3>
+                    <p>${p.desc}</p>
+                `;
+                grid.appendChild(card);
+            });
+            setupGlassGlow();
+        }
+
+        function openAddModal() {
+            const heslo = prompt("Zadej administrátorské heslo:");
+            if (heslo === TAJNE_HESLO) {
+                document.getElementById('addModal').style.display = 'flex';
+            } else if (heslo !== null) {
+                alert("Nesprávné heslo!");
+            }
+        }
+
+        window.closeModal = function(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        function submitProject() {
+            const title = document.getElementById('projTitle').value;
+            const desc = document.getElementById('projDesc').value;
+            const img = document.getElementById('projImg').value;
+            const link = document.getElementById('projLink').value;
+
+            if(!title || !desc) {
+                alert("Název a popis jsou povinné!");
+                return;
+            }
+
+            const newProj = {
+                id: Date.now(),
+                title: title,
+                desc: desc,
+                img: img,
+                link: link
+            };
+
+            projects.push(newProj);
+            localStorage.setItem('data_projekty', JSON.stringify(projects));
+            renderGrid();
+            closeModal('addModal');
+
+            document.getElementById('projTitle').value = '';
+            document.getElementById('projDesc').value = '';
+            document.getElementById('projImg').value = '';
+            document.getElementById('projLink').value = '';
+        }
+
+        function openDetailModal(id) {
+            if (manageMode) return;
+            const p = projects.find(item => item.id === id);
+            if (!p) return;
+
+            document.getElementById('detailTitle').innerText = p.title;
+            document.getElementById('detailDesc').innerText = p.desc;
+            
+            const imgContainer = document.getElementById('detailImgContainer');
+            imgContainer.innerHTML = p.img ? `<img src="${p.img}" class="project-detail-img" alt="Projekt">` : '';
+
+            const linkContainer = document.getElementById('detailLinkContainer');
+            linkContainer.innerHTML = p.link ? `<a href="${p.link}" target="_blank" class="project-detail-link">Otevřít odkaz na projekt →</a>` : '';
+
+            document.getElementById('detailModal').style.display = 'flex';
+        }
+
+        function toggleManageMode() {
+            if (!manageMode) {
+                const heslo = prompt("Zadej administrátorské heslo pro správu:");
+                if (heslo === TAJNE_HESLO) {
+                    manageMode = true;
+                    document.getElementById('manageBtn').style.background = '#ff4d4d';
+                    document.getElementById('manageBtn').style.color = '#fff';
+                    document.querySelectorAll('.delete-overlay-btn').forEach(btn => btn.style.display = 'block');
+                } else if (heslo !== null) {
+                    alert("Nesprávné heslo!");
+                }
+            } else {
+                disableManageMode();
+            }
+        }
+
+        function disableManageMode() {
+            manageMode = false;
+            const btn = document.getElementById('manageBtn');
+            if(btn) {
+                btn.style.background = 'var(--glass-bg)';
+                btn.style.color = 'var(--text-base-color)';
+            }
+            document.querySelectorAll('.delete-overlay-btn').forEach(btn => btn.style.display = 'none');
+        }
+
+        function deleteProject(event, id) {
+            event.stopPropagation();
+            if(confirm("Opravdu chceš tento projekt odstranit?")) {
+                projects = projects.filter(p => p.id !== id);
+                localStorage.setItem('data_projekty', JSON.stringify(projects));
+                renderGrid();
+                disableManageMode();
+            }
+        }
+
+        // Inicializace
+        loadProjects();
+        setupGlassGlow();
+    </script>
+
+</body>
+</html>
