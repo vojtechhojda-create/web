@@ -121,7 +121,6 @@
             transition: color 0.3s ease;
         }
 
-        /* Nový styl štítků podle zadání */
         .skills-row {
             display: flex;
             gap: 12px;
@@ -140,6 +139,48 @@
             letter-spacing: 1px;
             cursor: default;
             user-select: none;
+        }
+
+        /* Výběr štítků ve formuláři */
+        .tag-select-container {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-top: 5px;
+        }
+
+        .tag-option {
+            background: transparent;
+            color: var(--text-base-color);
+            padding: 4px 10px;
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s ease;
+        }
+
+        .tag-option.selected {
+            background: var(--text-base-color);
+            color: var(--bg-color);
+            border-color: var(--text-base-color);
+        }
+
+        /* Zobrazení vybraných štítků na kartě projektu */
+        .project-tags {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-top: 12px;
+        }
+
+        .project-tag-mini {
+            font-size: 0.8rem;
+            border: 1px dashed var(--text-base-color);
+            padding: 2px 6px;
+            text-transform: uppercase;
+            opacity: 0.7;
         }
 
         /* CONTACT SEKCE */
@@ -181,7 +222,6 @@
             transform: translateY(-3px);
         }
 
-        /* Světelný odlesk reagující na myš */
         .glass-element::before {
             content: '';
             position: absolute;
@@ -194,7 +234,6 @@
             z-index: 1;
         }
 
-        /* Úprava odkazu v kontaktu pro zachování struktury */
         .contact-link {
             font-size: 2.5rem;
             color: var(--text-base-color);
@@ -230,7 +269,7 @@
             overflow: hidden;
         }
 
-        /* Tlačítka pro správu dole vlevo */
+        /* Tlačítka pro správu */
         .admin-controls {
             position: absolute;
             bottom: 40px;
@@ -264,7 +303,7 @@
             z-index: 5;
         }
 
-        /* Spodní liquid glass navigační panel */
+        /* Spodní panel */
         .glass-nav {
             position: absolute;
             bottom: 40px;
@@ -470,10 +509,26 @@
                 <label>Popis (text)</label>
                 <textarea id="projDesc" rows="4"></textarea>
             </div>
+            
             <div class="form-group">
-                <label>URL adresa obrázku</label>
-                <input type="text" id="projImg" placeholder="https://odkaz-na-obrazek.cz/foto.jpg">
+                <label>Obrázek projektu (Nahraj soubor)</label>
+                <input type="file" id="projFile" accept="image/*" style="border:1px dashed var(--glass-border); padding:10px;">
             </div>
+
+            <div class="form-group">
+                <label>Použité technologie / Jazyky (Kliknutím vyber)</label>
+                <div class="tag-select-container" id="tagSelectContainer">
+                    <div class="tag-option" onclick="toggleTagSelect(this)">HTML</div>
+                    <div class="tag-option" onclick="toggleTagSelect(this)">CSS</div>
+                    <div class="tag-option" onclick="toggleTagSelect(this)">JavaScript</div>
+                    <div class="tag-option" onclick="toggleTagSelect(this)">Python</div>
+                    <div class="tag-option" onclick="toggleTagSelect(this)">C++</div>
+                    <div class="tag-option" onclick="toggleTagSelect(this)">React</div>
+                    <div class="tag-option" onclick="toggleTagSelect(this)">PHP</div>
+                    <div class="tag-option" onclick="toggleTagSelect(this)">MySQL</div>
+                </div>
+            </div>
+
             <div class="form-group">
                 <label>Odkaz na projekt (link)</label>
                 <input type="text" id="projLink" placeholder="https://mujprojekt.cz">
@@ -489,6 +544,7 @@
         <div class="modal-content">
             <h2 id="detailTitle">Název</h2>
             <div id="detailImgContainer"></div>
+            <div id="detailTagsContainer" class="projects-tags" style="margin-bottom:15px; margin-top:0;"></div>
             <p id="detailDesc">Popis...</p>
             <div id="detailLinkContainer"></div>
             <div class="modal-actions">
@@ -498,7 +554,7 @@
     </div>
 
     <script>
-        // Efekt myši pro tečky na pozadí
+        // Efekt myši
         const mouseGlow = document.querySelector('.mouse-glow');
         let targetX = -1000, targetY = -1000;
         let currentX = -1000, currentY = -1000;
@@ -517,7 +573,7 @@
         }
         animate();
 
-        // Výpočet pozice myši uvnitř Liquid Glass prvků pro efekt odlesku
+        // Liquid Glass odlesky
         function setupGlassGlow() {
             const handleMouseMove = (e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
@@ -533,7 +589,7 @@
             });
         }
 
-        // Detekce a nastavení tmavého/světlého režimu
+        // Tmavý/světlý režim
         function applySystemTheme() {
             const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
             document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
@@ -541,7 +597,7 @@
         applySystemTheme();
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applySystemTheme);
 
-        // Přepínání sekcí s plynulou animací
+        // Sekce
         function switchSection(sectionId) {
             document.querySelectorAll('.page-section').forEach(section => section.classList.remove('active'));
             document.getElementById(sectionId).classList.add('active');
@@ -560,6 +616,11 @@
             }
         }
 
+        // Přepínání vybraných štítků ve formuláři
+        function toggleTagSelect(element) {
+            element.classList.toggle('selected');
+        }
+
         // --- SPRÁVA PROJEKTŮ ---
         const TAJNE_HESLO = "Tygr6590.";
         let projects = [];
@@ -573,8 +634,9 @@
                 projects = [{
                     id: 1,
                     title: "Ukázkový projekt",
-                    desc: "Klikni na mě a uvidíš detail s obrázkem a odkazem. Pokud chceš přidávat vlastní věci, použij tlačítka v levém dolním rohu.",
+                    desc: "Klikni na mě a uvidíš detail se štítky a nahraným obrázkem.",
                     img: "",
+                    tags: ["HTML", "CSS", "JavaScript"],
                     link: ""
                 }];
             }
@@ -588,10 +650,20 @@
                 const card = document.createElement('div');
                 card.className = 'project-card glass-element';
                 card.setAttribute('onclick', `openDetailModal(${p.id})`);
+                
+                // Vygenerování tagů pro náhled na kartě
+                let tagsHtml = '';
+                if(p.tags && p.tags.length > 0) {
+                    tagsHtml = `<div class="project-tags">`;
+                    p.tags.forEach(t => { tagsHtml += `<span class="project-tag-mini">${t}</span>`; });
+                    tagsHtml += `</div>`;
+                }
+
                 card.innerHTML = `
                     <button class="delete-overlay-btn" onclick="deleteProject(event, ${p.id})">Smazat</button>
                     <h3>${p.title}</h3>
                     <p>${p.desc}</p>
+                    ${tagsHtml}
                 `;
                 grid.appendChild(card);
             });
@@ -601,6 +673,8 @@
         function openAddModal() {
             const heslo = prompt("Zadej administrátorské heslo:");
             if (heslo === TAJNE_HESLO) {
+                // Resetování vybraných štítků před otevřením
+                document.querySelectorAll('.tag-option').forEach(opt => opt.classList.remove('selected'));
                 document.getElementById('addModal').style.display = 'flex';
             } else if (heslo !== null) {
                 alert("Nesprávné heslo!");
@@ -611,34 +685,56 @@
             document.getElementById(modalId).style.display = 'none';
         }
 
+        // Zpracování dat a uložení nového projektu
         function submitProject() {
             const title = document.getElementById('projTitle').value;
             const desc = document.getElementById('projDesc').value;
-            const img = document.getElementById('projImg').value;
             const link = document.getElementById('projLink').value;
+            const fileInput = document.getElementById('projFile');
 
             if(!title || !desc) {
                 alert("Název a popis jsou povinné!");
                 return;
             }
 
-            const newProj = {
-                id: Date.now(),
-                title: title,
-                desc: desc,
-                img: img,
-                link: link
+            // Sesbírání vybraných jazyků ze štítků
+            const selectedTags = [];
+            document.querySelectorAll('.tag-option.selected').forEach(opt => {
+                selectedTags.push(opt.innerText);
+            });
+
+            const save = (base64Img) => {
+                const newProj = {
+                    id: Date.now(),
+                    title: title,
+                    desc: desc,
+                    img: base64Img || "",
+                    tags: selectedTags,
+                    link: link
+                };
+
+                projects.push(newProj);
+                localStorage.setItem('data_projekty', JSON.stringify(projects));
+                renderGrid();
+                closeModal('addModal');
+
+                // Vyčištění formuláře
+                document.getElementById('projTitle').value = '';
+                document.getElementById('projDesc').value = '';
+                document.getElementById('projLink').value = '';
+                fileInput.value = '';
             };
 
-            projects.push(newProj);
-            localStorage.setItem('data_projekty', JSON.stringify(projects));
-            renderGrid();
-            closeModal('addModal');
-
-            document.getElementById('projTitle').value = '';
-            document.getElementById('projDesc').value = '';
-            document.getElementById('projImg').value = '';
-            document.getElementById('projLink').value = '';
+            // Pokud uživatel nahrál soubor obrázku, převedeme ho na Base64 text
+            if (fileInput.files && fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    save(e.target.result);
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            } else {
+                save(""); // Bez obrázku
+            }
         }
 
         function openDetailModal(id) {
@@ -651,6 +747,15 @@
             
             const imgContainer = document.getElementById('detailImgContainer');
             imgContainer.innerHTML = p.img ? `<img src="${p.img}" class="project-detail-img" alt="Projekt">` : '';
+
+            // Zobrazení štítků v detailu okna
+            const tagsContainer = document.getElementById('detailTagsContainer');
+            tagsContainer.innerHTML = '';
+            if(p.tags && p.tags.length > 0) {
+                p.tags.forEach(t => {
+                    tagsContainer.innerHTML += `<span class="project-tag-mini" style="font-size:1rem; opacity:1; padding:4px 10px;">${t}</span>`;
+                });
+            }
 
             const linkContainer = document.getElementById('detailLinkContainer');
             linkContainer.innerHTML = p.link ? `<a href="${p.link}" target="_blank" class="project-detail-link">Otevřít odkaz na projekt →</a>` : '';
