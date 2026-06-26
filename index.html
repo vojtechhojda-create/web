@@ -342,6 +342,34 @@
             font-weight: bold;
         }
 
+        /* SKRYTÉ A MATNÉ HLAVNÍ TLAČÍTKO ADMIN LOGIN VRAVO DOLE */
+        .hidden-admin-trigger {
+            position: absolute;
+            bottom: 40px;
+            right: 40px;
+            z-index: 10;
+            padding: 16px 26px;
+            border-radius: 24px;
+            font-size: 1.1rem;
+            color: var(--text-base-color);
+            cursor: pointer;
+            user-select: none;
+            opacity: 0; /* Úplně skryté v základu */
+            transition: opacity 0.3s ease, background-color 0.2s ease;
+            background: transparent;
+            border: 1px solid transparent;
+        }
+
+        /* ROZSVÍCENÍ (GLOW) PŘI NAJETÍ MYŠI */
+        .hidden-admin-trigger:hover {
+            opacity: 1; /* Ukáže se při zamíření */
+            background: var(--glass-bg);
+            border-color: var(--glass-border);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            box-shadow: 0 8px 32px 0 var(--glass-shadow);
+        }
+
         .modal {
             display: none;
             position: fixed;
@@ -430,6 +458,12 @@
                 left: 50%;
                 transform: translateX(-50%);
             }
+            .hidden-admin-trigger {
+                bottom: 20px;
+                right: 20px;
+                padding: 10px 14px;
+                font-size: 0.9rem;
+            }
         }
         @media (max-width: 600px) { 
             .jmeno { font-size: 3.5rem; }
@@ -465,8 +499,8 @@
     <section id="contact" class="page-section">
         <div class="contact-container">
             <div class="glass-element" style="width: 100%;">
-                <a href="https://wa.me/420703150071" target="_blank" class="contact-link">
-                    WhatsApp: +420 703 150 071
+                <a href="mailto:vojtechhojda@gmail.com" class="contact-link">
+                    Email: vojtechhojda@gmail.com
                 </a>
             </div>
             <div class="glass-element" style="width: 100%;">
@@ -486,8 +520,9 @@
         <div class="nav-item active" onclick="switchSection('main')">Main</div>
         <div class="nav-item" onclick="switchSection('projects')">Projects</div>
         <div class="nav-item" onclick="switchSection('contact')">Contact</div>
-        <div class="nav-item" id="adminLoginBtn" onclick="handleAuth()" style="border-left: 1px solid var(--glass-border); padding-left: 15px;">Admin Login</div>
     </nav>
+
+    <div class="hidden-admin-trigger" id="adminLoginBtn" onclick="handleAuth()">Admin Login</div>
 
     <div class="modal" id="addModal">
         <div class="modal-content">
@@ -598,7 +633,7 @@
                 e.currentTarget.style.setProperty('--mouse-y', `${y}px`);
             };
 
-            document.querySelectorAll('.glass-element, .nav-item').forEach(element => {
+            document.querySelectorAll('.glass-element, .nav-item, .hidden-admin-trigger').forEach(element => {
                 element.removeEventListener('mousemove', handleMouseMove);
                 element.addEventListener('mousemove', handleMouseMove);
             });
@@ -617,7 +652,7 @@
 
             document.querySelectorAll('.nav-item').forEach(item => {
                 item.classList.remove('active');
-                if(item.id !== 'adminLoginBtn' && item.innerText.toLowerCase() === sectionId) item.classList.add('active');
+                if(item.innerText.toLowerCase() === sectionId) item.classList.add('active');
             });
 
             const adminControls = document.getElementById('adminControls');
@@ -653,7 +688,7 @@
                 if (activeSection && activeSection.id === 'projects') {
                     adminControls.style.display = 'flex';
                 }
-                renderGrid(); // Překreslíme, aby naskočila tlačítka pro smazání
+                renderGrid();
             } else {
                 currentUser = null;
                 if(loginBtn) loginBtn.innerText = "Admin Login";
