@@ -141,7 +141,6 @@
             user-select: none;
         }
 
-        /* STYLY PRO SEKCI O MNĚ */
         .about-card {
             max-width: 650px;
             width: 100%;
@@ -344,7 +343,19 @@
             cursor: pointer;
             position: relative;
             overflow: hidden;
-            transition: background-color 0.2s ease;
+            transition: background-color 0.2s ease, font-weight 0.2s ease;
+        }
+
+        /* SPECIÁLNÍ TLAČÍTKO PRO RUČNÍ PŘEPÍNÁNÍ REŽIMŮ */
+        .theme-toggle-btn {
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 42px;
+            height: 42px;
+            padding: 0;
+            border-radius: 50%;
         }
 
         .nav-item::before {
@@ -363,7 +374,6 @@
             font-weight: bold;
         }
 
-        /* SKRYTÉ A MATNÉ HLAVNÍ TLAČÍTKO ADMIN LOGIN VPRAVO DOLE */
         .hidden-admin-trigger {
             position: absolute;
             bottom: 40px;
@@ -490,6 +500,7 @@
             .contact-link { font-size: 1.2rem; padding: 10px 16px; }
             .glass-nav { width: 95%; justify-content: center; bottom: 20px; }
             .nav-item { padding: 10px 12px; font-size: 1rem; }
+            .theme-toggle-btn { width: 38px; height: 38px; }
         }
     </style>
 </head>
@@ -510,7 +521,7 @@
     <section id="about" class="page-section">
         <div class="about-card glass-element">
             <h2>O mně</h2>
-            <p>Ahoj, jmenuji se Vojtěch Hojda. Jsem začínající vývojář a editor z České republiky.</p>
+            <p>Ahoj, jmenuji se Vojtěch Hojda. Jsem začínající vývojář z České republiky. Baví mě tvořit webové aplikace a čisté, moderní designy s interaktivními efekty.</p>
         </div>
     </section>
 
@@ -544,6 +555,8 @@
     </section>
 
     <nav class="glass-nav">
+        <div class="nav-item theme-toggle-btn" id="themeToggleBtn" onclick="toggleTheme()">🌙</div>
+        
         <div class="nav-item active" onclick="switchSection('main')">Main</div>
         <div class="nav-item" onclick="switchSection('about')">About</div>
         <div class="nav-item" onclick="switchSection('projects')">Projects</div>
@@ -607,7 +620,7 @@
         </div>
     </div>
 
-    <script {nonce}>
+    <script>
         // --- KONFIGURACE FIREBASE Z TVÉHO PROJEKTU ---
         const firebaseConfig = {
             apiKey: "AIzaSyD76e6Sms8bPUINe7za9TDExKJtOkTWxl8",
@@ -667,12 +680,41 @@
             });
         }
 
-        function applySystemTheme() {
-            const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+        // --- FUNKCE PRO RUČNÍ PŘEPÍNÁNÍ REŽIMŮ (ZLEPŠENÝ DARK MODE) ---
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                document.documentElement.setAttribute('data-theme', savedTheme);
+                updateThemeToggleIcon(savedTheme);
+            } else {
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                const currentTheme = prefersDark ? 'dark' : 'light';
+                document.documentElement.setAttribute('data-theme', currentTheme);
+                updateThemeToggleIcon(currentTheme);
+            }
         }
-        applySystemTheme();
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applySystemTheme);
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+            updateThemeToggleIcon(newTheme);
+        }
+
+        function updateThemeToggleIcon(theme) {
+            const btn = document.getElementById('themeToggleBtn');
+            if(btn) {
+                btn.innerText = theme === 'dark' ? '☀️' : '🌙';
+            }
+        }
+
+        // Spuštění inicializace režimu
+        initTheme();
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+            if (!localStorage.getItem('theme')) initTheme();
+        });
 
         function switchSection(sectionId) {
             document.querySelectorAll('.page-section').forEach(section => section.classList.remove('active'));
@@ -729,7 +771,7 @@
             }
         });
 
-        // --- NAČÍTÁNÍ A UKLÁDÁNÍ DO REALNÉ DATABÁZE ---
+        // --- NAČÍTÁNÍ A UKLÁDÁNÍ DO DATABÁZE ---
         function loadProjects() {
             db.collection("projects").orderBy("id", "desc").onSnapshot(snapshot => {
                 projects = [];
